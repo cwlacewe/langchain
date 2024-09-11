@@ -191,6 +191,7 @@ class VDMS(VectorStore):
 
         # Update other parameters
         self.override_relevance_score_fn = relevance_score_fn
+        self.updated_properties = False
 
         # Initialize collection
         self._collection_name = self.add_set(
@@ -550,6 +551,14 @@ class VDMS(VectorStore):
                     all_properties=current_collection_properties,
                 )
                 response, _ = self.__run_vdms_query(all_queries, [blob_arr])
+                self.updated_properties = True
+
+    def check_and_update_properties(self):
+        if self.updated_properties:
+            updated_props = self.__get_properties(self._collection_name)
+            if self.collection_properties != updated_props:
+                self.collection_properties = updated_props
+            self.updated_properties = False
 
     def add_images(
         self,
@@ -1298,6 +1307,9 @@ class VDMS(VectorStore):
         normalize_distance: bool = False,
         **kwargs: Any,
     ) -> List[Tuple[Dict[str, Any], List]]:
+
+        self.check_and_update_properties()
+        
         all_responses: List[Any] = []
 
         if collection_name is None:
