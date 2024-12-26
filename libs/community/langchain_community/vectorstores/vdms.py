@@ -213,10 +213,7 @@ class VDMS(VectorStore):
         resp_dict.setdefault(
             "FindDescriptor", {"entities": list(), "returned": 0, "status": 0}
         )
-        new_response = [
-            # {"FindDescriptor": {"returned": 0, "status": 0, "entities": []}}
-            resp_dict
-        ]
+        new_response = [resp_dict]
 
         if ids is None:
             return new_response
@@ -398,7 +395,7 @@ class VDMS(VectorStore):
                 else:
                     ids.append(str(uuid.uuid4()))
 
-        # Remove IDs if exist-TEST_REMOVAL
+        # Remove IDs if exist
         remove_ids = [doc.id for doc in self.get_by_ids(ids) if doc.id]
         if len(remove_ids) > 0:
             if delete_existing:
@@ -528,8 +525,6 @@ class VDMS(VectorStore):
         """Return docs and their similarity scores on a scale from 0 to 1."""
         if self.override_relevance_score_fn is not None:
             kwargs["normalize_distance"] = False
-        # else:
-        #     kwargs["normalize_distance"] = True
 
         docs_and_scores = self.similarity_search_with_score(
             query=query,
@@ -724,7 +719,7 @@ class VDMS(VectorStore):
         vdms_store._len_check_if_sized(ids, texts, "ids", "texts")
         vdms_store._len_check_if_sized(ids, metadatas, "ids", "metadatas")
 
-        # Remove IDs if exist-TEST_REMOVAL
+        # Remove IDs if exist
         remove_ids = [doc.id for doc in vdms_store.get_by_ids(ids) if doc.id]
         if len(remove_ids) > 0:
             if delete_existing:
@@ -806,7 +801,6 @@ class VDMS(VectorStore):
             self.embedding_dimension = embedding_dimensions
         elif self.embedding is not None and hasattr(self.embedding, "embed_query"):
             self.embedding_dimension = len(
-                # self._embed_query("This is a sample sentence.")
                 self.embedding.embed_query("This is a sample sentence.")
             )
         elif self.embedding is not None and (
@@ -981,8 +975,7 @@ class VDMS(VectorStore):
                 results=None,
             )
         ]
-        # if isinstance(all_queries, dict):
-        #     all_queries = [all_queries]
+
         response, _ = self.utils.run_vdms_query(all_queries, all_blobs)
 
         try:
@@ -1231,10 +1224,7 @@ class VDMS(VectorStore):
             resp_dict.setdefault(
                 "FindDescriptor", {"entities": list(), "returned": 0, "status": 0}
             )
-            new_response = [
-                # {"FindDescriptor": {"returned": 0, "status": 0, "entities": []}}
-                resp_dict
-            ]
+            new_response = [resp_dict]
             for start_idx in range(0, len(all_queries), new_batch_size):
                 end_idx = min(start_idx + new_batch_size - 1, len(all_queries))
                 queries = all_queries[start_idx:end_idx]
@@ -1348,21 +1338,6 @@ class VDMS(VectorStore):
             props = {}
         else:
             props = {LANGCHAIN_ID_PROPERTY: str(id)}
-            # id_exists, query = self.utils.check_descriptor_exists_by_id(
-            #     self._client, collection_name, id
-            # )
-            # if id_exists:
-            #     skipped_value = {
-            #         prop_key: prop_val[-1]
-            #         for prop_key, prop_val in query["FindDescriptor"][
-            #             "constraints"
-            #         ].items()
-            #     }
-            #     pstr = f"[!] Embedding with id ({id}) exists in DB;"
-            #     pstr += "Therefore, skipped and not inserted"
-            #     logger.warning(pstr)
-            #     logger.warning(f"\tSkipped values are: {skipped_value}")
-            #     return {}
 
         if metadata:
             for k, v in metadata.items():
@@ -1370,7 +1345,7 @@ class VDMS(VectorStore):
                     props[k] = v
             # props.update(metadata)
             if LANGCHAIN_ID_PROPERTY not in props and "id" in metadata:
-                metadata[LANGCHAIN_ID_PROPERTY] = str(metadata["id"])
+                props[LANGCHAIN_ID_PROPERTY] = str(metadata["id"])
         if document not in [None, ""]:
             props["content"] = document
 
@@ -1840,25 +1815,6 @@ class VDMS_Utils:
                 )
 
         return response, valid_res
-
-    # def check_descriptor_exists_by_id(
-    #     self,
-    #     client: vdms.vdms,
-    #     setname: str,
-    #     id: str,
-    # ) -> Tuple[bool, Any]:
-    #     constraints = {LANGCHAIN_ID_PROPERTY: ["==", id]}
-    #     findDescriptor = self.add_descriptor(
-    #         "FindDescriptor",
-    #         setname,
-    #         constraints=constraints,
-    #         results={"list": [LANGCHAIN_ID_PROPERTY], "count": ""},
-    #     )
-    #     all_queries = [findDescriptor]
-    #     res, _ = client.query(all_queries)
-
-    #     res, valid_res = self.check_valid_response(all_queries, res)
-    #     return valid_res, findDescriptor
 
     def embedding2bytes(
         self, embedding: Union[list[float], None]
